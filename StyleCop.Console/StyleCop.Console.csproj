@@ -60,9 +60,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="paket.references" />
-    <None Include="Settings.StyleCop">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Tools\StyleCopSettingsEditor.exe">

@@ -1,5 +1,6 @@
 ﻿using DocoptNet;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -10,7 +11,11 @@ namespace StyleCop.Console
     {
         private static int _encounteredViolations;
 
-        const string Usage = @"
+        private static bool m_LastPrinted = false;
+
+        private static HashSet<string> m_BadPaths = new HashSet<string> { @"\obj\Debug\", @"\obj\Release\", @"\bin\Debug\", @"\bin\Release\", @"\packages\" };
+
+        private const string Usage = @"
 StyleCop.
 
 Usage:
@@ -19,7 +24,7 @@ Usage:
 
 Options:
     -h --help                   Show this screen
-    -p=<path> --path=<path>               Root folder to search in [default: .]
+    -p=<path> --path=<path>     Root folder to search in [default: .]
     --settings=<settingsPath>   Path to settings file";
 
         public static int Main(string[] args)
@@ -28,26 +33,27 @@ Options:
             {
                 var arguments = new Docopt().Apply(Usage, args, exit: true);
 
-                if (arguments["--help"].IsTrue)
-                {
-                    ShowHelp();
-                    return (int) ExitCode.Failed;
-                }
-
                 var projectPath = (string)arguments["--path"].Value;
                 var settingsLocation = arguments["--settings"]?.Value as string;
 
                 if (settingsLocation == null)
                 {
-                    settingsLocation = Path.Combine(Assembly.GetExecutingAssembly().Location, "Settings.StyleCop");
+                    settingsLocation = Path.Combine(new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName, "Settings.StyleCop");
+                }
+
+                if (!File.Exists(settingsLocation))
+                {
+                    Log();
+                    Log($"ERROR: Invalid path specified for Settings.StyleCop \"{settingsLocation}\"!");
+                    Log(Usage);
+                    return (int)ExitCode.Failed;
                 }
 
                 if (string.IsNullOrWhiteSpace(projectPath) || !Directory.Exists(projectPath))
                 {
-                    ShowHelp();
-                    System.Console.WriteLine("");
-                    System.Console.WriteLine("ERROR: Invalid or no path specified \"{0}\"!", projectPath);
-                    return (int) ExitCode.Failed;
+                    Log();
+                    Log($"ERROR: Invalid path specified \"{projectPath}\"!");
+                    return (int)ExitCode.Failed;
                 }
 
                 var searchOption = SearchOption.AllDirectories;
@@ -56,69 +62,75 @@ Options:
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine("An unhandled exception occured: {0}", ex);
-                return (int) ExitCode.Failed;
+                Log($"An unhandled exception occured: {ex}");
+                return (int)ExitCode.Failed;
             }
+        }
+
+        private static void Log(string msg = "")
+        {
+            System.Console.WriteLine(msg);
         }
 
         private static int ProcessFolder(string settings, string projectPath, SearchOption searchOption)
         {
-            System.Console.WriteLine($"Checking folder: {new FileInfo(projectPath).FullName}");
+            Log($"Checking folder: {new FileInfo(projectPath).FullName}");
             var console = new StyleCopConsole(settings, false, null, null, true);
             var project = new CodeProject(0, projectPath, new Configuration(null));
 
-            var files = Directory.EnumerateFiles(projectPath, "*.cs", searchOption).ToList(); ;
-            System.Console.WriteLine($"Checking {files.Count} files");
+            var files = Directory.EnumerateFiles(projectPath, "*.cs", searchOption).ToList();
+            Log($"Checking {files.Count} files");
 
+            files = GetCSharpFiles(files);
 
             foreach (var file in files)
             {
-                //TODO: This is pretty hacky. Have to figure out a better way to exclude packages and/or make this configurable.
-                if (file.Contains("\\packages\\"))
-                {
-                    continue;
-                }
-
                 console.Core.Environment.AddSourceCode(project, file, null);
             }
 
             console.OutputGenerated += OnOutputGenerated;
             console.ViolationEncountered += OnViolationEncountered;
-            console.Start(new[] {project}, true);
+            console.Start(new[] { project }, true);
             console.OutputGenerated -= OnOutputGenerated;
             console.ViolationEncountered -= OnViolationEncountered;
 
             if (_encounteredViolations > 0)
             {
-                System.Console.WriteLine("Finished with errors");
+                Log("Finished with errors");
                 return (int)ExitCode.Failed;
             }
 
-            System.Console.WriteLine("Success");
+            Log("Success");
             return (int)ExitCode.Passed;
         }
 
-        private static void ShowHelp()
+        private static List<string> GetCSharpFiles(List<string> files)
         {
-            System.Console.WriteLine("-------------------");
-            System.Console.WriteLine("| StyleCop Runner |");
-            System.Console.WriteLine("-------------------");
-            System.Console.WriteLine("");
-            System.Console.WriteLine("Usage:");
-            System.Console.WriteLine("  -project-path <path> or -p <path> ....... The path to analyze cs-files in");
-            System.Console.WriteLine("  -settings-location <path> or -s <path> .. The path to 'Settings.StyleCop'");
-            System.Console.WriteLine("  -not-recursively or -n .................. Do not process path recursively");
-            System.Console.WriteLine("  -help or -? ............................. Show this screen");
-        }
+            var output = new List<string>();
+            foreach (var file in files)
+            {
+                var isBad = false;
+                foreach (var badPath in m_BadPaths)
+                {
+                    if (file.Contains(badPath))
+                    {
+                        isBad = true;
+                        break;
+                    }
+                }
 
-        private static string m_Last;
-        private static bool m_LastPrinted = false;
+                if (!isBad)
+                {
+                    output.Add(file);
+                }
+            }
+
+            return output;
+        }
 
         private static void OnOutputGenerated(object sender, OutputEventArgs e)
         {
-            m_Last = e.Output;
             m_LastPrinted = false;
-            // System.Console.WriteLine(e.Output);
         }
 
         private static void OnViolationEncountered(object sender, ViolationEventArgs e)
@@ -126,7 +138,7 @@ Options:
             if (!m_LastPrinted)
             {
                 m_LastPrinted = true;
-                System.Console.WriteLine(e.SourceCode.Path);
+                Log(e.SourceCode.Path);
             }
 
             _encounteredViolations++;
@@ -137,7 +149,7 @@ Options:
         private static void WriteLineViolationMessage(string message)
         {
             System.Console.ForegroundColor = ConsoleColor.DarkRed;
-            System.Console.WriteLine(message);
+            Log(message);
             System.Console.ResetColor();
         }
     }
