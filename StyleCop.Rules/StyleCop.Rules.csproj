@@ -35,11 +35,13 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="StyleCop">
-      <HintPath>..\Dependencies\StyleCop.dll</HintPath>
+    <Reference Include="StyleCop, Version=4.7.1000.0, Culture=neutral, PublicKeyToken=f904653c63bc2738, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\StyleCop.MSBuild\tools\StyleCop.dll</HintPath>
     </Reference>
-    <Reference Include="StyleCop.CSharp">
-      <HintPath>..\Dependencies\StyleCop.CSharp.dll</HintPath>
+    <Reference Include="StyleCop.CSharp, Version=4.7.1000.0, Culture=neutral, PublicKeyToken=f904653c63bc2738, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\StyleCop.MSBuild\tools\StyleCop.CSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

@@ -157,3 +157,14 @@ FakesAssemblies/
 *.plg
 # Visual Studio 6 workspace options file
 *.opt
+
+
+
+StyleCopViolations.xml
+
+
+## Paket (libraries should not include the lock file)
+/paket.lock
+
+## FAKE build system
+/.fake

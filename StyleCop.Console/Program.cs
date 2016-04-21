@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace StyleCop.Console
@@ -50,7 +51,11 @@ namespace StyleCop.Console
             var console = new StyleCopConsole(settings, false, null, null, true);
             var project = new CodeProject(0, projectPath, new Configuration(null));
 
-            foreach (var file in Directory.EnumerateFiles(projectPath, "*.cs", searchOption))
+            var files = Directory.EnumerateFiles(projectPath, "*.cs", searchOption).ToList(); ;
+            System.Console.WriteLine($"Checking {files.Count} files");
+
+
+            foreach (var file in files)
             {
                 //TODO: This is pretty hacky. Have to figure out a better way to exclude packages and/or make this configurable.
                 if (file.Contains("\\packages\\"))
@@ -67,7 +72,14 @@ namespace StyleCop.Console
             console.OutputGenerated -= OnOutputGenerated;
             console.ViolationEncountered -= OnViolationEncountered;
 
-            return _encounteredViolations > 0 ? (int) ExitCode.Failed : (int) ExitCode.Passed;
+            if (_encounteredViolations > 0)
+            {
+                System.Console.WriteLine("Finished with errors");
+                return (int)ExitCode.Failed;
+            }
+
+            System.Console.WriteLine("Success");
+            return (int)ExitCode.Passed;
         }
 
         private static void ShowHelp()
@@ -83,13 +95,24 @@ namespace StyleCop.Console
             System.Console.WriteLine("  -help or -? ............................. Show this screen");
         }
 
+        private static string m_Last;
+        private static bool m_LastPrinted = false;
+
         private static void OnOutputGenerated(object sender, OutputEventArgs e)
         {
-            System.Console.WriteLine(e.Output);
+            m_Last = e.Output;
+            m_LastPrinted = false;
+            // System.Console.WriteLine(e.Output);
         }
 
         private static void OnViolationEncountered(object sender, ViolationEventArgs e)
         {
+            if (!m_LastPrinted)
+            {
+                m_LastPrinted = true;
+                System.Console.WriteLine(e.SourceCode.Path);
+            }
+
             _encounteredViolations++;
             WriteLineViolationMessage(string.Format("  Line {0}: {1} ({2})", e.LineNumber, e.Message,
                 e.Violation.Rule.CheckId));
