@@ -4,3 +4,4 @@ nuget docopt.net
 nuget FAKE
 nuget ILMerge
 nuget StyleCop.MSBuild
+nuget StyleCop

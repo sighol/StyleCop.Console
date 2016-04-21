@@ -47,7 +47,7 @@ Target "CopyToBin2" <| fun _ ->
 "Clean"
     ==> "Build"
 //    ==> "Merge"
-    ==> "CopyToBin2"
+//    ==> "CopyToBin2"
     ==> "Default"
 
 
