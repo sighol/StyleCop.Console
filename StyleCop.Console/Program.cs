@@ -108,7 +108,7 @@ Options:
 
             if (_encounteredViolations > 0)
             {
-                Log("Finished with errors");
+                Log($"Finished with {_encounteredViolations} errors");
                 return (int)ExitCode.Failed;
             }
 
