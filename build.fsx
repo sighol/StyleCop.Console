@@ -40,6 +40,7 @@ Target "CopyToBin2" <| fun _ ->
         File.Copy(dll, @"C:\Users\SigHo\bin2\" @@ (new FileInfo(dll)).Name, true)
 
     File.Copy(buildDir @@ "StyleCop.Console.exe", @"C:\Users\SigHo\bin2\" @@ "StyleCop.exe", true)
+    File.Copy(buildDir @@ "Settings.StyleCop", @"C:\Users\SigHo\bin2\" @@ "Settings.StyleCop", true)
 
 
 

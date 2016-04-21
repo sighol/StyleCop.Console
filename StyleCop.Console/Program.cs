@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DocoptNet;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -9,35 +10,49 @@ namespace StyleCop.Console
     {
         private static int _encounteredViolations;
 
+        const string Usage = @"
+StyleCop.
+
+Usage:
+    StyleCop --help
+    StyleCop [--path=<path>] [--settings=<settingsPath>]
+
+Options:
+    -h --help                   Show this screen
+    -p=<path> --path=<path>               Root folder to search in [default: .]
+    --settings=<settingsPath>   Path to settings file";
+
         public static int Main(string[] args)
         {
             try
             {
-                var arguments = new RunnerArguments(args);
+                var arguments = new Docopt().Apply(Usage, args, exit: true);
 
-                if (arguments.Help)
+                if (arguments["--help"].IsTrue)
                 {
                     ShowHelp();
                     return (int) ExitCode.Failed;
                 }
 
-                if (string.IsNullOrWhiteSpace(arguments.ProjectPath) || !Directory.Exists(arguments.ProjectPath))
+                var projectPath = (string)arguments["--path"].Value;
+                var settingsLocation = arguments["--settings"]?.Value as string;
+
+                if (settingsLocation == null)
+                {
+                    settingsLocation = Path.Combine(Assembly.GetExecutingAssembly().Location, "Settings.StyleCop");
+                }
+
+                if (string.IsNullOrWhiteSpace(projectPath) || !Directory.Exists(projectPath))
                 {
                     ShowHelp();
                     System.Console.WriteLine("");
-                    System.Console.WriteLine("ERROR: Invalid or no path specified \"{0}\"!", arguments.ProjectPath);
+                    System.Console.WriteLine("ERROR: Invalid or no path specified \"{0}\"!", projectPath);
                     return (int) ExitCode.Failed;
                 }
 
-                var settings = !string.IsNullOrWhiteSpace(arguments.SettingsLocation)
-                    ? arguments.SettingsLocation
-                    : Path.Combine(Assembly.GetExecutingAssembly().Location, "Settings.StyleCop");
+                var searchOption = SearchOption.AllDirectories;
 
-                var searchOption = arguments.NotRecursive ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
-
-                var projectPath = arguments.ProjectPath;
-
-                return ProcessFolder(settings, projectPath, searchOption);
+                return ProcessFolder(settingsLocation, projectPath, searchOption);
             }
             catch (Exception ex)
             {
@@ -48,6 +63,7 @@ namespace StyleCop.Console
 
         private static int ProcessFolder(string settings, string projectPath, SearchOption searchOption)
         {
+            System.Console.WriteLine($"Checking folder: {new FileInfo(projectPath).FullName}");
             var console = new StyleCopConsole(settings, false, null, null, true);
             var project = new CodeProject(0, projectPath, new Configuration(null));
 
