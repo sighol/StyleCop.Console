@@ -27,7 +27,7 @@ StyleCop.
 
 Usage:
     StyleCop --help
-    StyleCop [--path=<path>] [--settings=<settingsPath>]
+    StyleCop [--path=<path>] [--settings=<settingsPath>] [--exclude=<excludeFolders>...]
 
 Options:
     -h --help                   Show this screen
@@ -48,11 +48,15 @@ Options:
                     settingsLocation = Path.Combine(new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName, "Settings.StyleCop");
                 }
 
+                foreach (var exclude in arguments["--exclude"].AsList)
+                {
+                    m_BadPaths.Add(exclude.ToString());
+                }
+
                 if (!File.Exists(settingsLocation))
                 {
                     Log();
                     Log($"ERROR: Invalid path specified for Settings.StyleCop \"{settingsLocation}\"!");
-                    Log(Usage);
                     return (int)ExitCode.Failed;
                 }
 
@@ -81,14 +85,15 @@ Options:
 
         private static int ProcessFolder(string settings, string projectPath, SearchOption searchOption)
         {
+            Log($"Using Stylecop settings located at '{settings}'");
             Log($"Checking folder: {new FileInfo(projectPath).FullName}");
             var console = new StyleCopConsole(settings, false, null, null, true);
             var project = new CodeProject(0, projectPath, new Configuration(null));
 
             var files = Directory.EnumerateFiles(projectPath, "*.cs", searchOption).ToList();
+            files = GetCSharpFiles(files);
             Log($"Checking {files.Count} files");
 
-            files = GetCSharpFiles(files);
 
             foreach (var file in files)
             {
