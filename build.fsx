@@ -47,9 +47,10 @@ Target "CopyToBin" <| fun _ ->
 
 "Clean"
     ==> "Build"
-//    ==> "Merge"
-//    ==> "CopyToBin"
     ==> "All"
+
+"Build" ==> "CopyToBin"
+"BUild" ==> "Merge"
 
 
 RunTargetOrDefault "All"

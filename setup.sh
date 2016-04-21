@@ -1,5 +1,5 @@
 
 b()
 {
-	yes | cmd /c build.cmd
+	yes | cmd /c build.cmd $@
 }
