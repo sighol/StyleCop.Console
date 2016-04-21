@@ -13,7 +13,14 @@ namespace StyleCop.Console
 
         private static bool m_LastPrinted = false;
 
-        private static HashSet<string> m_BadPaths = new HashSet<string> { @"\obj\Debug\", @"\obj\Release\", @"\bin\Debug\", @"\bin\Release\", @"\packages\" };
+        private static HashSet<string> m_BadPaths { get; } = new HashSet<string>
+        {
+            @"\obj\Debug\",
+            @"\obj\Release\",
+            @"\bin\Debug\",
+            @"\bin\Release\",
+            @"\packages\"
+        };
 
         private const string Usage = @"
 StyleCop.

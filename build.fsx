@@ -17,7 +17,7 @@ Target "Clean" <| fun _ ->
     CleanDirs [buildDir]
 
 
-Target "Default" <| fun _ ->
+Target "All" <| fun _ ->
     trace "Hello World from FAKE"
 
 
@@ -35,7 +35,8 @@ Target "Merge" <| fun _ ->
                             Libraries = libs})
             "./StyleCop.exe" (buildDir @@ "StyleCop.Console.exe")
 
-Target "CopyToBin2" <| fun _ ->
+
+Target "CopyToBin" <| fun _ ->
     for dll in FindLibraries buildDir do
         File.Copy(dll, @"C:\Users\SigHo\bin2\" @@ (new FileInfo(dll)).Name, true)
 
@@ -47,8 +48,8 @@ Target "CopyToBin2" <| fun _ ->
 "Clean"
     ==> "Build"
 //    ==> "Merge"
-//    ==> "CopyToBin2"
-    ==> "Default"
+//    ==> "CopyToBin"
+    ==> "All"
 
 
-RunTargetOrDefault "Default"
+RunTargetOrDefault "All"
